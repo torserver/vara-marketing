@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "tor-mulder-drone-systems"
+  },
+  "targets": {
+    "tor-mulder-drone-systems": {
+      "hosting": {
+        "portal": [
+          "tor-mulder-drone-systems-portal"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

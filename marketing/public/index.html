@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VARA | Goa FPV & Commercial Mapping</title>
+    <!-- Load Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FONTS: Rajdhani (Tech/Square) & Outfit (Geometric Clean) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- THREE.js Import Map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+          "three/addons/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js"
+        }
+      }
+    </script>
+    
+    <!-- Tailwind Font & Color Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-brown': '#0f0c0b', 
+                        'cream': '#f5f3ef',       
+                        'accent': '#f59e0b',      
+                        'card-bg': '#1c1816',     
+                        'border-dark': '#3c3330',  
+                        'border-light': '#4d4340', 
+                    },
+                    fontFamily: {
+                        'sans': ['Outfit', 'sans-serif'],
+                        'heading': ['Rajdhani', 'sans-serif']
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(to right, #3c3330 1px, transparent 1px), linear-gradient(to bottom, #3c3330 1px, transparent 1px)",
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f0c0b; 
+            color: #f5f3ef; 
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5, h6, .font-heading {
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Hero Section Layout */
+        .hero-section {
+            min-height: 100dvh;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05) 0%, rgba(15, 12, 11, 0) 70%);
+        }
+
+        /* Canvas Background */
+        #hero-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; 
+            opacity: 0.6; 
+        }
+
+        /* Tech Grid Background */
+        .tech-grid {
+            background-size: 40px 40px;
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 5%, black 20%, black 80%, transparent 95%);
+            opacity: 0.1;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- NEW MINIMAL NAV --- */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 50;
+            height: 90px;
+            transition: all 0.4s ease;
+            background: linear-gradient(to bottom, rgba(15, 12, 11, 0.9) 0%, rgba(15, 12, 11, 0) 100%);
+        }
+        
+        /* Scrolled state for solid background */
+        .main-nav.scrolled {
+            background: rgba(15, 12, 11, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(60, 51, 48, 0.3);
+            height: 70px;
+        }
+
+        /* Fullscreen Menu Overlay */
+        .fullscreen-menu {
+            position: fixed;
+            inset: 0;
+            background-color: #0f0c0b;
+            z-index: 49; /* Just below nav */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        
+        .fullscreen-menu.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Menu Grid Background Effect */
+        .menu-bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(#3c3330 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.1;
+        }
+
+        /* Menu Links Animation */
+        .menu-link {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #f5f3ef;
+            text-transform: uppercase;
+            text-decoration: none; /* Ensure no default underline */
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+            position: relative;
+        }
+        
+        /* The Hover Slide Effect */
+        .menu-link:hover {
+            color: #f59e0b; /* accent */
+            transform: translateX(30px); /* Smooth GPU slide instead of padding */
+        }
+        
+        /* The Slash Marker */
+        .menu-link::before {
+            content: '/';
+            position: absolute;
+            left: -20px;
+            top: 0;
+            color: #f59e0b;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .menu-link:hover::before {
+            opacity: 1;
+            transform: translateX(0);
+            left: -30px; /* Positions it nicely next to the shifted text */
+        }
+
+        /* Staggered Animation for Links */
+        .fullscreen-menu.is-open .menu-link { opacity: 1; transform: translateY(0); }
+        .fullscreen-menu.is-open .menu-link:nth-child(1) { transition-delay: 0.1s; }
+        .fullscreen-menu.is-open .menu-link:nth-child(2) { transition-delay: 0.15s; }
+        .fullscreen-menu.is-open .menu-link:nth-child(3) { transition-delay: 0.2s; }
+        .fullscreen-menu.is-open .menu-link:nth-child(4) { transition-delay: 0.25s; }
+
+        /* Burger Button Styles */
+        .burger-btn {
+            width: 40px;
+            height: 40px;
+            position: relative;
+            cursor: pointer;
+            z-index: 60;
+        }
+        .burger-line {
+            position: absolute;
+            right: 0;
+            height: 2px;
+            background-color: #f5f3ef;
+            transition: all 0.3s ease;
+        }
+        .burger-line.top { top: 12px; width: 30px; }
+        .burger-line.mid { top: 20px; width: 20px; }
+        .burger-line.bot { top: 28px; width: 25px; }
+
+        .burger-btn:hover .burger-line { width: 35px; background-color: #f59e0b; }
+
+        /* Active State (X shape) */
+        .burger-btn.active .burger-line.top { transform: rotate(45deg); top: 20px; width: 30px; }
+        .burger-btn.active .burger-line.mid { opacity: 0; }
+        .burger-btn.active .burger-line.bot { transform: rotate(-45deg); top: 20px; width: 30px; }
+
+        /* Buttons */
+        .btn-primary {
+            background-color: #f59e0b;
+            color: #0f0c0b;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            padding: 0.75rem 2rem;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+            background-color: #fbbf24;
+        }
+
+        /* NEW: Minimal Animated Link (Replaces Button) */
+        .minimal-cta {
+            position: relative;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem; 
+            text-transform: uppercase;
+            letter-spacing: 0.15em; /* Wider tracking for tech feel */
+            color: #f59e0b;
+            padding-bottom: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        /* The Faint Guide Line (Always visible) */
+        .minimal-cta::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-color: rgba(245, 158, 11, 0.2); 
+        }
+        
+        /* The Active Charge Line (Slides in) */
+        .minimal-cta::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px; /* Slightly thicker */
+            background-color: #f59e0b; 
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .minimal-cta:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        
+        .minimal-cta:hover {
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            padding: 0.75rem 2rem;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.2s ease;
+        }
+        .btn-outline:hover {
+            background-color: rgba(245, 158, 11, 0.1);
+        }
+
+        /* Animations */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.8s ease forwards;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            background: rgba(28, 24, 22, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(245, 243, 239, 0.1);
+        }
+        
+        /* Stats Counter */
+        .stat-number {
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="bg-deep-brown text-cream selection:bg-accent selection:text-deep-brown">
+
+    <!-- 3D Background -->
+    <canvas id="hero-canvas"></canvas>
+
+    <!-- Fullscreen Overlay Menu -->
+    <div id="fullscreen-menu" class="fullscreen-menu">
+        <div class="menu-bg-grid"></div>
+        <div class="flex flex-col items-start space-y-6 z-10 p-10">
+            <a href="#services" class="menu-link" onclick="toggleMenu()">Services</a>
+            <a href="#portfolio" class="menu-link" onclick="toggleMenu()">Case Studies</a>
+            <a href="#compliance" class="menu-link" onclick="toggleMenu()">Compliance</a>
+            <a href="#contact" class="menu-link" onclick="toggleMenu()">Contact</a>
+            
+            <div class="h-px w-20 bg-border-light my-8"></div>
+            
+            <a href="https://tor-mulder-drone-systems-portal.web.app" target="_blank" class="text-accent font-heading text-xl tracking-widest hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                CLIENT PORTAL
+            </a>
+        </div>
+        
+        <!-- Decoration in menu -->
+        <div class="absolute bottom-10 right-10 text-right hidden md:block opacity-50">
+            <p class="font-heading text-6xl font-bold text-border-light">VARA</p>
+            <p class="text-sm tracking-widest">SYSTEMS READY</p>
+        </div>
+    </div>
+
+    <!-- Navigation (Minimal) -->
+    <nav id="main-nav" class="main-nav flex items-center justify-center">
+        <div class="w-full max-w-7xl px-6 flex justify-between items-center h-full">
+            <!-- Logo -->
+            <a href="#" class="flex items-center space-x-3 group z-50">
+                <svg class="w-8 h-8 text-accent transition-transform group-hover:rotate-180 duration-700" viewBox="0 0 100 100" fill="none"> 
+                    <path d="M50 0L93.3 25V75L50 100L6.7 75V25L50 0Z" stroke="currentColor" stroke-width="8"/>
+                    <circle cx="50" cy="50" r="15" fill="currentColor"/>
+                </svg>
+                <span class="font-heading text-2xl font-bold tracking-widest text-cream">VARA<span class="text-accent">.SYS</span></span>
+            </a>
+
+            <!-- Right Side: CTA + Burger -->
+            <div class="flex items-center gap-6">
+                <!-- CTA Button (Hidden on very small screens to save space) -->
+                <a href="#contact" class="hidden sm:inline-flex btn-primary text-sm py-2 px-6 shadow-none hover:shadow-lg z-50">
+                    Book Mission
+                </a>
+                
+                <!-- Custom Burger Icon -->
+                <div id="burger-btn" class="burger-btn" onclick="toggleMenu()">
+                    <div class="burger-line top"></div>
+                    <div class="burger-line mid"></div>
+                    <div class="burger-line bot"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="tech-grid bg-grid-pattern"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 w-full pt-32 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Text Content -->
+            <div class="fade-up">
+                <div class="inline-flex items-center space-x-2 bg-accent/10 border border-accent/20 rounded px-3 py-1 mb-6">
+                    <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                    <span class="text-accent text-xs font-bold tracking-widest uppercase">Goa & Beyond • DGCA Certified</span>
+                </div>
+                
+                <h1 class="font-heading text-6xl sm:text-7xl lg:text-8xl font-bold leading-tight mb-6 text-white">
+                    DATA YOU CAN <span class="text-transparent bg-clip-text bg-gradient-to-r from-accent to-yellow-200">TRUST.</span><br>
+                    VISUALS THAT <span class="text-transparent bg-clip-text bg-gradient-to-r from-accent to-yellow-200">SELL.</span>
+                </h1>
+                
+                <p class="text-xl text-gray-400 mb-8 max-w-lg leading-relaxed font-light">
+                    We bridge the gap between <strong>Cinematic FPV</strong> marketing and <strong>Industrial Grade</strong> photogrammetry. One team, dual capability.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                    <a href="#services" class="minimal-cta group">
+                        Explore Capabilities 
+                        <!-- Arrow animates on hover using group-hover -->
+                        <svg class="w-5 h-5 ml-3 transition-transform duration-300 group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    </a>
+                </div>
+                
+                <!-- Trust Bar -->
+                <div class="mt-12 pt-8 border-t border-border-dark/50">
+                    <p class="text-xs text-gray-500 uppercase tracking-widest mb-4">Tech Stack & Compliance</p>
+                    <div class="flex flex-wrap gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                        <!-- Simple Text Logos for Cleanliness -->
+                        <span class="font-heading font-bold text-lg">DJI ENTERPRISE</span>
+                        <span class="font-heading font-bold text-lg">WEBODM</span>
+                        <span class="font-heading font-bold text-lg">PIX4D</span>
+                        <span class="font-heading font-bold text-lg">DGCA INDIA</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hero Visual/Stats -->
+            <div class="hidden lg:block relative fade-up delay-200">
+                 <!-- Decorative HUD Elements -->
+                 <div class="absolute -top-10 -right-10 w-24 h-24 border-t-2 border-r-2 border-accent opacity-30"></div>
+                 <div class="absolute -bottom-10 -left-10 w-24 h-24 border-b-2 border-l-2 border-accent opacity-30"></div>
+                 
+                 <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
+                     <div class="absolute top-0 right-0 p-4 opacity-20">
+                         <svg class="w-32 h-32 text-accent" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
+                     </div>
+                     
+                     <h3 class="font-heading text-2xl font-bold mb-6 border-b border-border-light pb-2">Operational Status</h3>
+                     
+                     <div class="space-y-6">
+                         <div class="flex justify-between items-center">
+                             <span class="text-gray-400 text-sm">Active Projects</span>
+                             <span class="font-mono text-accent text-xl stat-number">12</span>
+                         </div>
+                         <div class="flex justify-between items-center">
+                             <span class="text-gray-400 text-sm">Data Processed</span>
+                             <span class="font-mono text-accent text-xl stat-number">4.5 TB</span>
+                         </div>
+                         <div class="flex justify-between items-center">
+                             <span class="text-gray-400 text-sm">Flight Hours</span>
+                             <span class="font-mono text-accent text-xl stat-number">850+</span>
+                         </div>
+                         <div class="mt-4 bg-green-900/20 border border-green-800 p-3 rounded flex items-center">
+                             <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                             <span class="text-green-500 text-xs font-bold uppercase">Ready to Deploy</span>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Grid (Bento Style) -->
+    <section id="services" class="py-24 bg-[#0f0c0b] relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-heading text-4xl font-bold mb-4">Dual Capabilities</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">We don't just fly. We analyze, map, and create. Select your mission profile.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Card 1: Creative -->
+                <div class="group relative bg-card-bg border border-border-dark hover:border-accent transition-colors duration-300 p-8 rounded-none overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-accent text-deep-brown font-bold text-xs px-2 py-1 font-mono">TYPE: CREATIVE</div>
+                    <div class="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h3 class="font-heading text-3xl font-bold mb-4 group-hover:text-accent transition-colors">FPV Cinematic Tours</h3>
+                    <p class="text-gray-400 mb-6 leading-relaxed">
+                        Single-take, fly-through videos for luxury resorts, real estate, and events. We use the Avata 2 to fly indoors and outdoors seamlessly.
+                    </p>
+                    <ul class="space-y-2 mb-8 text-sm text-gray-300 font-mono">
+                        <li class="flex items-center"><span class="text-accent mr-2">/</span> 4K 60FPS Stabilized</li>
+                        <li class="flex items-center"><span class="text-accent mr-2">/</span> Indoor Safe (Prop Guards)</li>
+                        <li class="flex items-center"><span class="text-accent mr-2">/</span> Sound Design Included</li>
+                    </ul>
+                    <a href="#contact" class="text-accent text-sm font-bold uppercase tracking-widest hover:underline flex items-center">
+                        Request Showreel <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </a>
+                </div>
+
+                <!-- Card 2: Industrial -->
+                <div class="group relative bg-card-bg border border-border-dark hover:border-accent transition-colors duration-300 p-8 rounded-none overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-gray-700 text-white font-bold text-xs px-2 py-1 font-mono">TYPE: TECHNICAL</div>
+                    <div class="w-12 h-12 bg-cream/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6 text-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                    </div>
+                    <h3 class="font-heading text-3xl font-bold mb-4 group-hover:text-cream transition-colors">Mapping & Photogrammetry</h3>
+                    <p class="text-gray-400 mb-6 leading-relaxed">
+                        Centimeter-accurate 3D maps, volumetric measurements, and progress tracking for construction sites. Actionable data, not just photos.
+                    </p>
+                    <ul class="space-y-2 mb-8 text-sm text-gray-300 font-mono">
+                        <li class="flex items-center"><span class="text-accent mr-2">/</span> Orthomosaics (GeoTIFF)</li>
+                        <li class="flex items-center"><span class="text-accent mr-2">/</span> Volumetric Calculations</li>
+                        <li class="flex items-center"><span class="text-accent mr-2">/</span> Digital Elevation Models</li>
+                    </ul>
+                    <a href="#contact" class="text-cream text-sm font-bold uppercase tracking-widest hover:underline flex items-center">
+                        Request Sample Data <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Inquiry / Contact -->
+    <section id="contact" class="py-24 relative bg-card-bg border-t border-border-dark">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="bg-deep-brown border border-border-dark p-8 md:p-12 rounded-2xl shadow-2xl relative overflow-hidden">
+                <!-- Glowing effect -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50"></div>
+                
+                <div class="text-center mb-10">
+                    <h2 class="font-heading text-4xl font-bold text-white mb-4">Start Your Mission</h2>
+                    <p class="text-gray-400">Tell us about your project. We typically respond with a quote within 4 hours.</p>
+                </div>
+
+                <form id="contact-form" onsubmit="event.preventDefault(); document.getElementById('success-msg').classList.remove('hidden'); this.reset();" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Name</label>
+                            <input type="text" required class="w-full bg-[#1c1816] border border-border-light text-cream p-3 rounded focus:outline-none focus:border-accent transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Company / Organization</label>
+                            <input type="text" required class="w-full bg-[#1c1816] border border-border-light text-cream p-3 rounded focus:outline-none focus:border-accent transition-colors">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Project Type</label>
+                        <select class="w-full bg-[#1c1816] border border-border-light text-cream p-3 rounded focus:outline-none focus:border-accent transition-colors">
+                            <option>Construction Progress Monitoring</option>
+                            <option>Real Estate Marketing (FPV)</option>
+                            <option>Roof/Solar Inspection</option>
+                            <option>Other / Custom</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Mission Details</label>
+                        <textarea rows="4" required placeholder="Location, approximate area size, key deliverables needed..." class="w-full bg-[#1c1816] border border-border-light text-cream p-3 rounded focus:outline-none focus:border-accent transition-colors"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full btn-primary text-lg">Send Inquiry</button>
+                    
+                    <div id="success-msg" class="hidden p-4 bg-green-900/30 border border-green-800 text-green-400 text-center rounded">
+                        <p class="font-bold">Transmission Received.</p>
+                        <p class="text-sm">We'll be in touch shortly to coordinate flight plans.</p>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Lead Magnet -->
+            <div class="mt-12 text-center">
+                <p class="text-sm text-gray-500 mb-4">Not ready to book? Get our compliance checklist.</p>
+                <a href="#" onclick="alert('Mock Download: Goa Airspace Map')" class="text-accent text-sm font-bold border-b border-accent hover:text-white hover:border-white transition-colors pb-1">Download Free Goa Airspace Guide</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#0f0c0b] border-t border-border-dark py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-6 md:mb-0">
+                <span class="font-heading text-xl font-bold text-white">VARA<span class="text-accent">.SYS</span></span>
+                <p class="text-xs text-gray-600 mt-2">© 2025 All Rights Reserved.</p>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="text-gray-500 hover:text-accent transition-colors text-sm">Privacy Policy</a>
+                <a href="#" class="text-gray-500 hover:text-accent transition-colors text-sm">Terms of Service</a>
+                <a href="#" class="text-gray-500 hover:text-accent transition-colors text-sm">LinkedIn</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Three.js Background Script -->
+    <script type="module">
+        import * as THREE from 'three';
+        
+        // Setup
+        const canvas = document.getElementById('hero-canvas');
+        const scene = new THREE.Scene();
+        // Add subtle fog for depth
+        scene.fog = new THREE.FogExp2(0x0f0c0b, 0.002);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // Function to create a circular texture on the fly
+        function createCircleTexture() {
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+            
+            context.beginPath();
+            context.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
+            context.fillStyle = 'white';
+            context.fill();
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // Particles
+        const geometry = new THREE.BufferGeometry();
+        const count = 3000;
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+
+        const color1 = new THREE.Color('#f59e0b'); // Accent
+        const color2 = new THREE.Color('#3c3330'); // Dark gray
+
+        for(let i = 0; i < count; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 50;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 50;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+
+            // Mix colors
+            const mixedColor = Math.random() > 0.5 ? color1 : color2;
+            colors[i * 3] = mixedColor.r;
+            colors[i * 3 + 1] = mixedColor.g;
+            colors[i * 3 + 2] = mixedColor.b;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.15, // Slightly larger to account for the circle shape
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true,
+            map: createCircleTexture(), // Apply the circle texture
+            alphaTest: 0.5 // Ensures transparency renders cleanly
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        camera.position.z = 15;
+
+        // Animation
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX / window.innerWidth - 0.5;
+            mouseY = event.clientY / window.innerHeight - 0.5;
+        });
+
+        const clock = new THREE.Clock();
+
+        const animate = () => {
+            const elapsedTime = clock.getElapsedTime();
+
+            // Rotate entire system slowly
+            particles.rotation.y = elapsedTime * 0.05;
+            particles.rotation.x = elapsedTime * 0.02;
+
+            // Mouse interaction parallax
+            camera.position.x += (mouseX * 2 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 2 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // MENU LOGIC
+        window.toggleMenu = function() {
+            const menu = document.getElementById('fullscreen-menu');
+            const burger = document.getElementById('burger-btn');
+            
+            menu.classList.toggle('is-open');
+            burger.classList.toggle('active');
+            
+            // Lock body scroll when menu is open
+            if(menu.classList.contains('is-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        };
+
+        // Scroll Effect for Nav
+        const nav = document.getElementById('main-nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+    </script>
+</body>
+</html>
