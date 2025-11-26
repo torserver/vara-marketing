@@ -19,7 +19,7 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_VARASYS }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TOR_MULDER_DRONE_SYSTEMS }}'
           channelId: live
           projectId: tor-mulder-drone-systems
           entryPoint: ./marketing  # <--- THIS IS THE KEY FIX
