@@ -150,7 +150,7 @@
             font-weight: 700;
             color: #f5f3ef;
             text-transform: uppercase;
-            text-decoration: none; /* Ensure no default underline */
+            text-decoration: none; 
             display: inline-block;
             opacity: 0;
             transform: translateY(30px);
@@ -161,7 +161,7 @@
         /* The Hover Slide Effect */
         .menu-link:hover {
             color: #f59e0b; /* accent */
-            transform: translateX(30px); /* Smooth GPU slide instead of padding */
+            transform: translateX(30px); 
         }
         
         /* The Slash Marker */
@@ -179,7 +179,7 @@
         .menu-link:hover::before {
             opacity: 1;
             transform: translateX(0);
-            left: -30px; /* Positions it nicely next to the shifted text */
+            left: -30px; 
         }
 
         /* Staggered Animation for Links */
@@ -352,9 +352,10 @@
         </div>
     </div>
 
-    <!-- Navigation (Minimal) -->
+    <!-- Navigation (Minimal & Wide) -->
     <nav id="main-nav" class="main-nav flex items-center justify-center">
-        <div class="w-full max-w-7xl px-6 flex justify-between items-center h-full">
+        <!-- Replaced max-w-7xl with w-full and increased horizontal padding -->
+        <div class="w-full px-6 md:px-16 lg:px-24 flex justify-between items-center h-full">
             <!-- Logo -->
             <a href="#" class="flex items-center space-x-3 group z-50">
                 <svg class="w-8 h-8 text-accent transition-transform group-hover:rotate-180 duration-700" viewBox="0 0 100 100" fill="none"> 
@@ -385,9 +386,10 @@
     <section class="hero-section">
         <div class="tech-grid bg-grid-pattern"></div>
         
-        <div class="max-w-7xl mx-auto px-6 w-full pt-32 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <!-- Operations Card Removed. Content width adjusted to max-w-4xl for focus. -->
+        <div class="max-w-7xl mx-auto px-6 w-full pt-32 relative z-10 flex items-center min-h-[60vh]">
             <!-- Text Content -->
-            <div class="fade-up">
+            <div class="fade-up max-w-3xl">
                 <div class="inline-flex items-center space-x-2 bg-accent/10 border border-accent/20 rounded px-3 py-1 mb-6">
                     <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
                     <span class="text-accent text-xs font-bold tracking-widest uppercase">Goa & Beyond • DGCA Certified</span>
@@ -425,39 +427,6 @@
                 </div>
             </div>
             
-            <!-- Hero Visual/Stats -->
-            <div class="hidden lg:block relative fade-up delay-200">
-                 <!-- Decorative HUD Elements -->
-                 <div class="absolute -top-10 -right-10 w-24 h-24 border-t-2 border-r-2 border-accent opacity-30"></div>
-                 <div class="absolute -bottom-10 -left-10 w-24 h-24 border-b-2 border-l-2 border-accent opacity-30"></div>
-                 
-                 <div class="glass-card p-8 rounded-2xl relative overflow-hidden">
-                     <div class="absolute top-0 right-0 p-4 opacity-20">
-                         <svg class="w-32 h-32 text-accent" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
-                     </div>
-                     
-                     <h3 class="font-heading text-2xl font-bold mb-6 border-b border-border-light pb-2">Operational Status</h3>
-                     
-                     <div class="space-y-6">
-                         <div class="flex justify-between items-center">
-                             <span class="text-gray-400 text-sm">Active Projects</span>
-                             <span class="font-mono text-accent text-xl stat-number">12</span>
-                         </div>
-                         <div class="flex justify-between items-center">
-                             <span class="text-gray-400 text-sm">Data Processed</span>
-                             <span class="font-mono text-accent text-xl stat-number">4.5 TB</span>
-                         </div>
-                         <div class="flex justify-between items-center">
-                             <span class="text-gray-400 text-sm">Flight Hours</span>
-                             <span class="font-mono text-accent text-xl stat-number">850+</span>
-                         </div>
-                         <div class="mt-4 bg-green-900/20 border border-green-800 p-3 rounded flex items-center">
-                             <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                             <span class="text-green-500 text-xs font-bold uppercase">Ready to Deploy</span>
-                         </div>
-                     </div>
-                 </div>
-            </div>
         </div>
     </section>
 
@@ -707,7 +676,7 @@
             }
         };
 
-        // Scroll Effect for Nav test test
+        // Scroll Effect for Nav
         const nav = document.getElementById('main-nav');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 50) {
